@@ -14,7 +14,17 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
 
+#include <bluetooth/mesh/models.h>
+
 static struct bt_mesh_cfg_cli cfg_cli;
+
+void dtt_update_handler(struct bt_mesh_dtt_srv *srv,
+			     struct bt_mesh_msg_ctx *ctx,
+			     uint32_t old_transition_time,
+			     uint32_t new_transition_time) {}
+
+static struct bt_mesh_time_srv time_srv = BT_MESH_TIME_SRV_INIT(NULL);
+static struct bt_mesh_time_cli time_cli = BT_MESH_TIME_CLI_INIT(NULL);
 
 BT_MESH_SHELL_HEALTH_PUB_DEFINE(health_pub);
 
@@ -25,8 +35,18 @@ static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_HEALTH_CLI(&bt_mesh_shell_health_cli),
 };
 
+static const struct bt_mesh_model client_models[] = {
+	BT_MESH_MODEL_TIME_CLI(&time_cli),
+};
+
+static const struct bt_mesh_model server_models[] = {
+	BT_MESH_MODEL_TIME_SRV(&time_srv),
+};
+
 static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(1, client_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(2, server_models, BT_MESH_MODEL_NONE),
 };
 
 static const struct bt_mesh_comp comp = {
