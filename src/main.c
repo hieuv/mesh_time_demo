@@ -6,6 +6,7 @@
 
 #include <zephyr/sys/printk.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/shell/shell.h>
@@ -100,3 +101,66 @@ int main(void)
 	printk("Before any Mesh commands you must run \"mesh init\"\n");
 	return 0;
 }
+
+int demo_time_authority_time_set_cmd(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+
+	struct bt_mesh_time_status time_status = {
+		.tai = {                    // For demo purpose, set TAI time to 100000:0
+			.sec = 100000,
+			.subsec = 0,
+		},
+		.uncertainty = 0,
+		.tai_utc_delta = 292,       // Current TAI-UTC Delta (leap seconds) in spec representation
+		.time_zone_offset = 0x44,   // +1:00 for Norway (with Daylight Saving Time)
+		.is_authority = true        // Reliable TAI source flag
+	};
+
+	int64_t uptime = k_uptime_get();
+
+	bt_mesh_time_srv_time_set(&time_srv, uptime, &time_status);
+
+	printk("TAI time set to 100000:0\n");
+	printk("Uptime: %lldms\n", uptime);
+
+	return 0;
+}
+
+int demo_time_get_cmd(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	int64_t uptime;
+	uint64_t tai_sec;
+	uint8_t tai_subsec;
+	struct bt_mesh_time_status time_status;
+
+	uptime = k_uptime_get();
+
+	err = bt_mesh_time_srv_status(&time_srv, uptime, &time_status);
+
+	if (err) {
+		if (err == -EAGAIN) printk("bt_mesh_time_srv_status() error -EAGAIN. Has time been set yet?\n");
+		else printk("bt_mesh_time_srv_status() error %d\n", err);
+	}
+	else {
+		printk("TAI time extracted directly from Time Server: ");
+		tai_sec = time_status.tai.sec;
+		tai_subsec = time_status.tai.subsec;
+		printk("%lld:%d\n", tai_sec, tai_subsec);
+		printk("Uptime: %lldms\n", uptime);
+	}
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+		demo_subcmds,
+		SHELL_CMD_ARG(time_authority_time_set, NULL,
+			"Set time on the Time Server, meant to be used on node with Time Authority Role only\n",
+			demo_time_authority_time_set_cmd, 1, 0),
+		SHELL_CMD_ARG(time_get, NULL,
+			"Get time from the local Time Server\n",
+			demo_time_get_cmd, 1, 0),
+		SHELL_SUBCMD_SET_END
+		);
+SHELL_CMD_REGISTER(demo, &demo_subcmds, "Demo commands\n", NULL);
