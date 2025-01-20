@@ -140,8 +140,12 @@ int demo_time_get_cmd(const struct shell *sh, size_t argc, char **argv)
 	err = bt_mesh_time_srv_status(&time_srv, uptime, &time_status);
 
 	if (err) {
-		if (err == -EAGAIN) printk("bt_mesh_time_srv_status() error -EAGAIN. Has time been set yet?\n");
-		else printk("bt_mesh_time_srv_status() error %d\n", err);
+		if (err == -EAGAIN) {
+			printk("bt_mesh_time_srv_status() error -EAGAIN. Has time been set yet?\n");
+		}
+		else {
+			printk("bt_mesh_time_srv_status() error %d\n", err);
+		}
 	}
 	else {
 		printk("TAI time extracted directly from Time Server: ");
@@ -155,10 +159,14 @@ int demo_time_get_cmd(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 		demo_subcmds,
-		SHELL_CMD_ARG(time_authority_time_set, NULL,
-			"Set time on the Time Server, meant to be used on node with Time Authority Role only\n",
+		SHELL_CMD_ARG(time_authority_set_time, 
+			NULL,
+			"Set time on the Time Server, \
+			meant to be used on node with Time Authority Role only\n",
 			demo_time_authority_time_set_cmd, 1, 0),
-		SHELL_CMD_ARG(time_get, NULL,
+
+		SHELL_CMD_ARG(local_time_server_get_time, 
+			NULL,
 			"Get time from the local Time Server\n",
 			demo_time_get_cmd, 1, 0),
 		SHELL_SUBCMD_SET_END
